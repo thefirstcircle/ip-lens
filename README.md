@@ -1,5 +1,10 @@
 # IP Lens
 
+[![Version](https://img.shields.io/visual-studio-marketplace/v/factorynull.ip-lens?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=factorynull.ip-lens)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/factorynull.ip-lens?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=factorynull.ip-lens)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/factorynull.ip-lens?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=factorynull.ip-lens)
+[![License](https://img.shields.io/github/license/thefirstcircle/ip-lens?style=flat-square)](LICENSE)
+
 ![IP Lens demo](https://raw.githubusercontent.com/thefirstcircle/ip-lens/refs/heads/main/images/demo.gif)
 
 Hover over any IP address or hostname for instant DNS lookups, WHOIS/ASN info, and geolocation — without leaving your editor. Detects IPv4, IPv6, CIDR blocks, and hostnames in any text file and enriches them with live data from configurable DNS and IP info providers.
