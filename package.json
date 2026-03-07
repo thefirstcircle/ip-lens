@@ -1,0 +1,91 @@
+{
+  "name": "ip-lens",
+  "displayName": "IP Lens",
+  "description": "Hover over any IP address or hostname for instant DNS lookups, WHOIS/ASN info, and geolocation — right in the editor",
+  "version": "0.1.0",
+  "publisher": "factorynull",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thefirstcircle/ip-lens"
+  },
+  "engines": { "vscode": "^1.85.0" },
+  "icon": "images/icon.png",
+  "categories": ["Other", "Visualization"],
+  "keywords": ["ip", "dns", "whois", "network", "geolocation", "cidr", "ipv4", "ipv6", "hostname", "asn", "networking", "log"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ipLens.resolveAll",
+        "title": "IP Lens: Resolve All IPs in File"
+      },
+      {
+        "command": "ipLens.clearCache",
+        "title": "IP Lens: Clear Resolution Cache"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "ipLens.resolveAll",
+          "when": "editorIsOpen",
+          "group": "navigation@99"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "IP Lens",
+      "properties": {
+        "ipLens.enableGutterIcon": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show gutter icon on lines containing IPs"
+        },
+        "ipLens.activateOnLanguages": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["plaintext", "log", "ini", "csv", "yaml", "json", "markdown", "shellscript", "properties"],
+          "description": "Language IDs where IP Lens activates"
+        },
+        "ipLens.cacheTTLSeconds": {
+          "type": "number",
+          "default": 300,
+          "description": "How long to cache resolution results (seconds)"
+        },
+        "ipLens.dnsProvider": {
+          "type": "string",
+          "enum": ["dns.google", "cloudflare", "quad9"],
+          "enumDescriptions": [
+            "Google Public DNS — dns.google/resolve",
+            "Cloudflare 1.1.1.1 — cloudflare-dns.com/dns-query",
+            "Quad9 — dns.quad9.net/dns-query"
+          ],
+          "default": "dns.google",
+          "description": "DNS-over-HTTPS provider used for PTR and forward A record lookups"
+        },
+        "ipLens.ipInfoProvider": {
+          "type": "string",
+          "enum": ["ip-api.com", "ipwho.is"],
+          "enumDescriptions": [
+            "ip-api.com — free, 45 req/min, no key required",
+            "ipwho.is — free, no stated rate limit, no key required"
+          ],
+          "default": "ip-api.com",
+          "description": "Provider used for IP geolocation, ASN, and organisation lookups"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}

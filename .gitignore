@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Compiled output
+out/
+
+# Packaging
+*.vsix
+
+# Test/scratch files
+test-ips.txt
+
+# Claude session data
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
