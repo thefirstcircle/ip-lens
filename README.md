@@ -1,5 +1,7 @@
 # IP Lens
 
+![IP Lens demo](https://raw.githubusercontent.com/thefirstcircle/ip-lens/refs/heads/main/images/demo.gif)
+
 Hover over any IP address or hostname for instant DNS lookups, WHOIS/ASN info, and geolocation — without leaving your editor. Detects IPv4, IPv6, CIDR blocks, and hostnames in any text file and enriches them with live data from configurable DNS and IP info providers.
 
 ## Features
