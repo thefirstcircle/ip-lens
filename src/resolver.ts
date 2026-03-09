@@ -1,5 +1,6 @@
 import * as https from 'https';
 import * as http from 'http';
+import * as dns from 'dns';
 
 export interface ResolvedInfo {
   ptr?: string;           // reverse DNS hostname
@@ -29,6 +30,35 @@ let cacheTTL = 300_000; // ms, updated from config
 
 export function setCacheTTL(seconds: number) {
   cacheTTL = seconds * 1000;
+}
+
+// ── Local DNS resolver config ─────────────────────────────────────────────
+let localDnsResolverAddress: string = '';
+
+export function setLocalDnsResolver(address: string) {
+  localDnsResolverAddress = address.trim();
+}
+
+/** PTR lookup for private IPs using the system resolver (or an optional override). */
+async function fetchPrivatePTR(ip: string): Promise<string | undefined> {
+  if (ip.includes(':')) { return undefined; } // IPv6 PTR skipped
+  try {
+    if (localDnsResolverAddress) {
+      // Optional override: point at a specific server (e.g. an internal DNS)
+      const resolver = new dns.promises.Resolver();
+      const server = localDnsResolverAddress.includes(':')
+        ? localDnsResolverAddress
+        : `${localDnsResolverAddress}:53`;
+      resolver.setServers([server]);
+      const hostnames = await resolver.reverse(ip);
+      return hostnames[0];
+    }
+    // Default: inherit the OS/system resolver — resolves internal names automatically
+    const hostnames = await dns.promises.reverse(ip);
+    return hostnames[0];
+  } catch {
+    return undefined;
+  }
 }
 
 // ── Provider config ───────────────────────────────────────────────────────
@@ -101,10 +131,6 @@ function classifyPrivateIP(ip: string): string | undefined {
   return undefined;
 }
 
-function isPrivateIP(ip: string): boolean {
-  return classifyPrivateIP(ip) !== undefined;
-}
-
 // Detect well-known cloud provider ASNs / org strings
 const CLOUD_PROVIDERS: Array<[RegExp, string]> = [
   [/amazon|aws|EC2/i, 'AWS'],
@@ -114,7 +140,7 @@ const CLOUD_PROVIDERS: Array<[RegExp, string]> = [
   [/fastly/i, 'Fastly'],
   [/akamai/i, 'Akamai'],
   [/digitalocean/i, 'DigitalOcean'],
-  [/linode|akamai/i, 'Linode'],
+  [/linode/i, 'Linode'],
   [/hetzner/i, 'Hetzner'],
   [/vultr/i, 'Vultr'],
   [/ovh/i, 'OVH'],
@@ -229,10 +255,12 @@ export async function resolve(address: string, kind: 'ipv4' | 'ipv6' | 'hostname
     if (privateKind) {
       info.isPrivate = true;
       info.privateKind = privateKind;
-      const ptr = await fetchPTR(target);
+      const ptr = await fetchPrivatePTR(target);
       if (ptr) {
         info.ptr = ptr;
-        info.resolvedVia = activeDoh;
+        info.resolvedVia = localDnsResolverAddress
+          ? `local resolver (${localDnsResolverAddress})`
+          : 'system resolver';
       }
     } else {
       const ipInfo = await fetchIPInfo(target);
@@ -244,17 +272,24 @@ export async function resolve(address: string, kind: 'ipv4' | 'ipv6' | 'hostname
       info.resolvedVia = `${activeIpInfo} · ${activeDoh}`;
     }
   } else {
-    // hostname
-    const ip = await fetchForwardDNS(target);
-    if (ip) {
-      const ipInfo = await fetchIPInfo(ip);
-      Object.assign(info, ipInfo);
-      if (!info.ptr) info.ptr = ip;
-      info.cloudProvider = detectCloudProvider(info.org, info.isp);
-      info.resolvedVia = `${activeDoh} · ${activeIpInfo}`;
+    // hostname — check first for a trailing embedded IPv4 (e.g. "host-172.24.1.5")
+    const EMBEDDED_IPV4 = /(?:^|[^.\d])((?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)){3})(?:[-\/]\d+)?$/;
+    const embedded = EMBEDDED_IPV4.exec(target);
+    if (embedded) {
+      const resolved = await resolve(embedded[1], 'ipv4');
+      info = { ...resolved, query: target };
     } else {
-      info.error = 'DNS lookup returned no A record';
-      info.resolvedVia = activeDoh;
+      const ip = await fetchForwardDNS(target);
+      if (ip) {
+        const ipInfo = await fetchIPInfo(ip);
+        Object.assign(info, ipInfo);
+        if (!info.ptr) info.ptr = ip;
+        info.cloudProvider = detectCloudProvider(info.org, info.isp);
+        info.resolvedVia = `${activeDoh} · ${activeIpInfo}`;
+      } else {
+        info.error = 'DNS lookup returned no A record';
+        info.resolvedVia = activeDoh;
+      }
     }
   }
 

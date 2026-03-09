@@ -1,12 +1,31 @@
 import * as vscode from 'vscode';
 import { findAddresses, AddressMatch, MatchKind } from './patterns';
-import { resolve, clearCache as clearResolverCache, setCacheTTL, setDohProvider, setIpInfoProvider, ResolvedInfo } from './resolver';
+import { resolve, clearCache as clearResolverCache, setCacheTTL, setDohProvider, setIpInfoProvider, setLocalDnsResolver, ResolvedInfo } from './resolver';
 
 // ── Decoration types (created in activate) ────────────────────────────────
 let underlineDecIPv4: vscode.TextEditorDecorationType;
 let underlineDecIPv6: vscode.TextEditorDecorationType;
 let underlineDecHostname: vscode.TextEditorDecorationType;
 let gutterDec: vscode.TextEditorDecorationType;
+
+// ── Constants ─────────────────────────────────────────────────────────────
+const MAX_DECORATIONS = 10_000; // cap to keep editor responsive on large files
+const RESOLVE_CONCURRENCY = 8;  // max simultaneous network requests in Resolve All
+
+// ── Batch offset→position conversion (avoids per-match positionAt IPC) ────
+function batchPositions(text: string, offsets: number[]): Map<number, vscode.Position> {
+  const sorted = [...new Set(offsets)].sort((a, b) => a - b);
+  const map = new Map<number, vscode.Position>();
+  let line = 0, lineStart = 0, si = 0;
+  for (let i = 0; i <= text.length && si < sorted.length; i++) {
+    while (si < sorted.length && sorted[si] === i) {
+      map.set(sorted[si], new vscode.Position(line, i - lineStart));
+      si++;
+    }
+    if (text[i] === '\n') { line++; lineStart = i + 1; }
+  }
+  return map;
+}
 
 // ── Debounce timers ───────────────────────────────────────────────────────
 const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -66,8 +85,13 @@ function decorateEditor(editor: vscode.TextEditor) {
   }
 
   const text = document.getText();
-  const matches = findAddresses(text);
+  const allMatches = findAddresses(text);
+  const truncated = allMatches.length > MAX_DECORATIONS;
+  const matches = truncated ? allMatches.slice(0, MAX_DECORATIONS) : allMatches;
   docMatches.set(document.uri.toString(), matches);
+
+  const offsets = matches.flatMap(m => [m.start, m.end]);
+  const posMap = batchPositions(text, offsets);
 
   const rangesIPv4: vscode.DecorationOptions[] = [];
   const rangesIPv6: vscode.DecorationOptions[] = [];
@@ -75,8 +99,8 @@ function decorateEditor(editor: vscode.TextEditor) {
   const gutterLines = new Set<number>();
 
   for (const m of matches) {
-    const start = document.positionAt(m.start);
-    const end = document.positionAt(m.end);
+    const start = posMap.get(m.start)!;
+    const end = posMap.get(m.end)!;
     const decoration = { range: new vscode.Range(start, end) };
     if (m.kind === 'ipv4') { rangesIPv4.push(decoration); }
     else if (m.kind === 'ipv6') { rangesIPv6.push(decoration); }
@@ -99,14 +123,19 @@ function decorateEditor(editor: vscode.TextEditor) {
 
   // Update status bar if this is the active editor
   if (editor === vscode.window.activeTextEditor) {
-    updateStatusBar(matches.length);
+    updateStatusBar(matches.length, truncated ? allMatches.length : undefined);
   }
 }
 
-function updateStatusBar(count: number) {
-  if (count > 0) {
-    statusBarItem.text = `$(globe) ${count} IP${count !== 1 ? 's' : ''}`;
-    statusBarItem.tooltip = 'IP Lens: Run "Resolve All IPs in File" to inspect';
+function updateStatusBar(shown: number, total?: number) {
+  if (shown > 0) {
+    const truncated = total !== undefined && total > shown;
+    statusBarItem.text = truncated
+      ? `$(globe) ${shown} of ${total} IPs`
+      : `$(globe) ${shown} IP${shown !== 1 ? 's' : ''}`;
+    statusBarItem.tooltip = truncated
+      ? `IP Lens: showing first ${shown} of ${total} addresses — file too large for full decoration`
+      : 'IP Lens: Run "Resolve All IPs in File" to inspect';
     statusBarItem.show();
   } else {
     statusBarItem.hide();
@@ -223,19 +252,25 @@ async function resolveAllPanel(editor: vscode.TextEditor) {
     { enableScripts: true, retainContextWhenHidden: true }
   );
 
-  panel.webview.html = buildLoadingHtml(matches.length);
-
-  const results = await Promise.all(
-    matches.map(async (m) => ({ match: m, info: await resolve(m.value, m.kind) }))
-  );
-
-  // Deduplicate by value (keep first occurrence)
+  // Deduplicate before resolving — no point resolving the same IP 500 times
   const seen = new Set<string>();
-  const unique = results.filter(({ match }) => {
-    if (seen.has(match.value)) { return false; }
-    seen.add(match.value);
+  const uniqueMatches = matches.filter(m => {
+    if (seen.has(m.value)) { return false; }
+    seen.add(m.value);
     return true;
   });
+
+  panel.webview.html = buildLoadingHtml(uniqueMatches.length);
+
+  // Resolve in batches to avoid exhausting the network / hitting rate limits
+  const unique: Array<{ match: AddressMatch; info: ResolvedInfo }> = [];
+  for (let i = 0; i < uniqueMatches.length; i += RESOLVE_CONCURRENCY) {
+    const batch = uniqueMatches.slice(i, i + RESOLVE_CONCURRENCY);
+    const batchResults = await Promise.all(
+      batch.map(async m => ({ match: m, info: await resolve(m.value, m.kind) }))
+    );
+    unique.push(...batchResults);
+  }
 
   panel.webview.html = buildResultsHtml(unique);
 
@@ -380,6 +415,7 @@ export function activate(context: vscode.ExtensionContext) {
   setCacheTTL(cfg<number>('cacheTTLSeconds'));
   setDohProvider(cfg<string>('dnsProvider'));
   setIpInfoProvider(cfg<string>('ipInfoProvider'));
+  setLocalDnsResolver(cfg<string>('localDnsResolver') ?? '');
 
   underlineDecIPv4 = vscode.window.createTextEditorDecorationType({
     textDecoration: 'underline dotted rgba(100, 160, 255, 0.7) 1.5px',
@@ -437,6 +473,7 @@ export function activate(context: vscode.ExtensionContext) {
         setCacheTTL(cfg<number>('cacheTTLSeconds'));
         setDohProvider(cfg<string>('dnsProvider'));
         setIpInfoProvider(cfg<string>('ipInfoProvider'));
+        setLocalDnsResolver(cfg<string>('localDnsResolver') ?? '');
         clearResolverCache(); // stale results from old provider are invalid
         vscode.window.visibleTextEditors.forEach(decorateEditor);
       }

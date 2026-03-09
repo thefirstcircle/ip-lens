@@ -1,9 +1,6 @@
 # IP Lens
 
-[![Version](https://img.shields.io/visual-studio-marketplace/v/factorynull.ip-lens?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=factorynull.ip-lens)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/factorynull.ip-lens?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=factorynull.ip-lens)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/factorynull.ip-lens?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=factorynull.ip-lens)
-[![License](https://img.shields.io/github/license/thefirstcircle/ip-lens?style=flat-square)](LICENSE)
+[View on VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=factorynull.ip-lens) · [![License](https://img.shields.io/github/license/thefirstcircle/ip-lens?style=flat-square)](LICENSE)
 
 ![IP Lens demo](https://raw.githubusercontent.com/thefirstcircle/ip-lens/refs/heads/main/images/demo.gif)
 
@@ -17,8 +14,8 @@ Hover over any IP address or hostname for instant DNS lookups, WHOIS/ASN info, a
 - **Gutter icon** on every line that contains an address
 - **Status bar counter** — `🌐 N IPs` in the bottom-right; click to open the Resolve All panel
 - **Resolve All panel** — right-click → *IP Lens: Resolve All IPs in File* or use the Command Palette to open a side panel with a full table of every unique address in the file; click any row to jump to and select that address in the editor
-- **Private IP classification** — RFC 1918 Class A/B/C, Loopback, Link-local, IPv6 ULA — no external lookups made
-- **Configurable providers** — choose your DNS-over-HTTPS resolver and IP info API independently
+- **Private IP resolution** — RFC 1918 Class A/B/C, Loopback, Link-local, IPv6 ULA are classified locally; reverse PTR lookups use your system's DNS resolver so internal hostnames resolve automatically on your network
+- **Configurable providers** — choose your DNS-over-HTTPS resolver and IP info API independently; optionally override the DNS server used for private PTR lookups
 - **TTL cache** — results are cached per-session; configurable expiry
 
 ## Usage
@@ -46,16 +43,19 @@ Add more via the `ipLens.activateOnLanguages` setting, or use `"*"` to activate 
 | `ipLens.enableGutterIcon` | `true` | Show globe icon in the gutter on lines with IPs |
 | `ipLens.activateOnLanguages` | *(list above)* | Language IDs where IP Lens runs |
 | `ipLens.cacheTTLSeconds` | `300` | How long to cache resolved results |
-| `ipLens.dnsProvider` | `dns.google` | DNS-over-HTTPS provider for PTR and A record lookups |
+| `ipLens.dnsProvider` | `dns.google` | DNS-over-HTTPS provider for PTR and A record lookups on public IPs |
 | `ipLens.ipInfoProvider` | `ip-api.com` | Provider for ASN, geolocation, and organisation data |
+| `ipLens.localDnsResolver` | *(system)* | DNS server for reverse PTR lookups of private/RFC 1918 addresses (e.g. `192.168.1.1` or `192.168.1.1:53`). Leave empty to use the OS resolver |
 
-### DNS Providers
+### DNS Providers (public IPs)
 
 | Value | Endpoint |
 |---|---|
 | `dns.google` *(default)* | `dns.google/resolve` |
 | `cloudflare` | `cloudflare-dns.com/dns-query` |
 | `quad9` | `dns.quad9.net/dns-query` |
+
+> These DoH providers are used for public IP PTR lookups and hostname A record resolution only. Private/RFC 1918 addresses always use native DNS (see `ipLens.localDnsResolver`).
 
 ### IP Info Providers
 
@@ -72,7 +72,8 @@ All lookups are made client-side from your machine. No data is sent to any serve
 
 | Data | Source |
 |---|---|
-| PTR / reverse DNS | Configured DoH provider |
+| PTR / reverse DNS (public IPs) | Configured DoH provider |
+| PTR / reverse DNS (private IPs) | System resolver (or `ipLens.localDnsResolver` if set) |
 | Forward DNS (A record) | Configured DoH provider |
 | ASN, org, ISP, geo | Configured IP info provider |
 | Cloud provider | Detected from ASN/org string (local, no request) |
