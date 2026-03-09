@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { findAddresses, AddressMatch, MatchKind } from './patterns';
+import { findAddresses, AddressMatch, MatchKind, IPV4, IPV6 } from './patterns';
 import { resolve, clearCache as clearResolverCache, setCacheTTL, setDohProvider, setIpInfoProvider, setLocalDnsResolver, ResolvedInfo } from './resolver';
 
 // ── Decoration types (created in activate) ────────────────────────────────
@@ -189,6 +189,12 @@ function buildHoverContent(
       .join(' ');
     rows.push(['Location', loc]);
   }
+  if (info.gatewayAddress) {
+    const gwLabel = info.gatewayPtr
+      ? `\`${info.gatewayAddress}\` — ${info.gatewayPtr}`
+      : `\`${info.gatewayAddress}\``;
+    rows.push(['Gateway', gwLabel]);
+  }
   if (info.cloudProvider) {
     rows.push(['Cloud', `$(cloud) ${info.cloudProvider}`]);
   }
@@ -199,7 +205,7 @@ function buildHoverContent(
       md.appendMarkdown(`| **${k}** | ${v} |\n`);
     }
   } else if (info.isPrivate) {
-    md.appendMarkdown('_No external info available for private addresses._\n');
+    md.appendMarkdown('_No PTR record returned for this address._\n');
   }
 
   if (info.resolvedVia) {
@@ -410,6 +416,112 @@ function buildResultsHtml(
 </html>`;
 }
 
+// ── Resolve Selection ─────────────────────────────────────────────────────
+function classifySelection(text: string): MatchKind {
+  if (new RegExp(`^(?:${IPV4})(?:/(?:3[0-2]|[12]\\d|\\d))?$`).test(text)) { return 'ipv4'; }
+  if (new RegExp(`^(?:${IPV6})(?:/(?:12[0-8]|1[01]\\d|[1-9]\\d|\\d))?$`).test(text)) { return 'ipv6'; }
+  return 'hostname';
+}
+
+function buildSingleResultHtml(address: string, kind: MatchKind, info: ResolvedInfo): string {
+  const kindLabel = kind === 'ipv4' ? 'IPv4' : kind === 'ipv6' ? 'IPv6' : 'Hostname';
+  const kindClass = kind;
+  const flag = info.country ? flagEmoji(info.country) : '🌐';
+  const ptr = info.ptr ?? (info.isPrivate ? '(private)' : '—');
+  const org = info.org ?? '—';
+  const asn = info.asn ?? '—';
+  const locParts = [info.countryName, info.region, info.city].filter(Boolean);
+  const location = locParts.length ? `${flag} ${locParts.join(', ')}` : '—';
+  const cloud = info.cloudProvider ? `☁️ ${info.cloudProvider}` : '—';
+  const errorHtml = info.error && !info.isPrivate
+    ? `<tr><td colspan="2"><span class="err">⚠ ${escHtml(info.error)}</span></td></tr>`
+    : '';
+  const privateHtml = info.isPrivate
+    ? `<tr><td><b>Type</b></td><td>🔒 Private — ${escHtml(info.privateKind ?? 'RFC 1918')}</td></tr>`
+    : '';
+  const resolvedVia = info.resolvedVia ? `<p class="via">via ${escHtml(info.resolvedVia)}</p>` : '';
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  body {
+    font-family: var(--vscode-font-family, sans-serif);
+    font-size: 13px;
+    padding: 16px 20px;
+    color: var(--vscode-editor-foreground);
+    background: var(--vscode-editor-background);
+  }
+  h2 { font-size: 1.1em; margin-bottom: 14px; opacity: .85; }
+  .address { font-family: var(--vscode-editor-font-family, monospace); font-size: 14px; font-weight: bold; margin-bottom: 12px; }
+  table { border-collapse: collapse; width: 100%; }
+  td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--vscode-panel-border, #2a2a2a);
+    vertical-align: middle;
+  }
+  td:first-child { opacity: .7; width: 120px; }
+  .badge {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .ipv4     { background: #1a4080; color: #9ecfff; }
+  .ipv6     { background: #1e3a1a; color: #9fda80; }
+  .hostname { background: #3a2a10; color: #ffb870; }
+  .err { color: var(--vscode-errorForeground, #f48771); }
+  .via { opacity: .5; font-size: 11px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<h2>🌐 IP Lens — <span class="badge ${kindClass}">${kindLabel}</span></h2>
+<p class="address">${escHtml(address)}</p>
+<table>
+  <tbody>
+    ${privateHtml}
+    ${errorHtml}
+    ${!info.error || info.isPrivate ? `
+    <tr><td>PTR</td><td>${escHtml(ptr)}</td></tr>
+    <tr><td>ASN</td><td>${escHtml(asn)}</td></tr>
+    <tr><td>Org</td><td>${escHtml(org)}</td></tr>
+    <tr><td>Location</td><td>${escHtml(location)}</td></tr>
+    <tr><td>Cloud</td><td>${escHtml(cloud)}</td></tr>
+    ${info.gatewayAddress ? `<tr><td>Gateway</td><td>${escHtml(info.gatewayAddress)}${info.gatewayPtr ? ` — ${escHtml(info.gatewayPtr)}` : ''}</td></tr>` : ''}
+    ` : ''}
+  </tbody>
+</table>
+${resolvedVia}
+</body>
+</html>`;
+}
+
+async function resolveSelectionPanel(editor: vscode.TextEditor) {
+  const selection = editor.selection;
+  const text = editor.document.getText(selection).trim();
+
+  if (!text) {
+    vscode.window.showInformationMessage('IP Lens: No text selected.');
+    return;
+  }
+
+  const kind = classifySelection(text);
+
+  const panel = vscode.window.createWebviewPanel(
+    'ipLensSelection',
+    `IP Lens: ${text}`,
+    vscode.ViewColumn.Beside,
+    {}
+  );
+
+  panel.webview.html = buildLoadingHtml(1);
+  const info = await resolve(text, kind);
+  panel.webview.html = buildSingleResultHtml(text, kind, info);
+}
+
 // ── Extension lifecycle ───────────────────────────────────────────────────
 export function activate(context: vscode.ExtensionContext) {
   setCacheTTL(cfg<number>('cacheTTLSeconds'));
@@ -448,6 +560,11 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('ipLens.resolveAll', () => {
       const editor = vscode.window.activeTextEditor;
       if (editor) { resolveAllPanel(editor); }
+    }),
+
+    vscode.commands.registerCommand('ipLens.resolveSelection', () => {
+      const editor = vscode.window.activeTextEditor;
+      if (editor) { resolveSelectionPanel(editor); }
     }),
 
     vscode.commands.registerCommand('ipLens.clearCache', () => {

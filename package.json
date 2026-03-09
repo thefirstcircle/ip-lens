@@ -2,7 +2,7 @@
   "name": "ip-lens",
   "displayName": "IP Lens",
   "description": "Hover over any IP address or hostname for instant DNS lookups, WHOIS/ASN info, and geolocation — right in the editor",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "publisher": "factorynull",
   "license": "MIT",
   "repository": {
@@ -22,12 +22,21 @@
         "title": "IP Lens: Resolve All IPs in File"
       },
       {
+        "command": "ipLens.resolveSelection",
+        "title": "IP Lens: Resolve Selected Text"
+      },
+      {
         "command": "ipLens.clearCache",
         "title": "IP Lens: Clear Resolution Cache"
       }
     ],
     "menus": {
       "editor/context": [
+        {
+          "command": "ipLens.resolveSelection",
+          "when": "editorHasSelection",
+          "group": "navigation@98"
+        },
         {
           "command": "ipLens.resolveAll",
           "when": "editorIsOpen",

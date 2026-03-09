@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0] - 2026-03-09
+
+### Added
+- CIDR network addresses (e.g. `128.119.36.0/25`, `128.119.64.96/27`) now show a **Gateway** row in the hover card with a PTR lookup of the first host address (network + 1), using the system/local resolver for private ranges and DoH for public ones
+- Large file performance: decoration is now capped at 10,000 addresses; the status bar shows `N of M IPs` when a file exceeds this limit
+- Large file performance: offset-to-position conversion now uses a single linear scan instead of individual `positionAt` calls per match
+- Resolve All panel now deduplicates addresses before resolving and processes lookups in batches of 8 to avoid rate limiting
+
+### Fixed
+- Hostnames with a hyphen-separated prefix length suffix (e.g. `hostname-172.24.1.5-32`) now correctly extract and resolve the embedded IP
+
 ## [0.2.2] - 2026-03-09
 
 ### Fixed

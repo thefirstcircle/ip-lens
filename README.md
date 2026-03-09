@@ -1,7 +1,5 @@
 # IP Lens
 
-[View on VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=factorynull.ip-lens) · [![License](https://img.shields.io/github/license/thefirstcircle/ip-lens?style=flat-square)](LICENSE)
-
 ![IP Lens demo](https://raw.githubusercontent.com/thefirstcircle/ip-lens/refs/heads/main/images/demo.gif)
 
 Hover over any IP address or hostname for instant DNS lookups, WHOIS/ASN info, and geolocation — without leaving your editor. Detects IPv4, IPv6, CIDR blocks, and hostnames in any text file and enriches them with live data from configurable DNS and IP info providers.
@@ -13,6 +11,7 @@ Hover over any IP address or hostname for instant DNS lookups, WHOIS/ASN info, a
 - **Hover card** — PTR/reverse DNS, ASN, organisation, ISP, country, city, and cloud provider badge
 - **Gutter icon** on every line that contains an address
 - **Status bar counter** — `🌐 N IPs` in the bottom-right; click to open the Resolve All panel
+- **Resolve Selected Text** — select any text, right-click → *IP Lens: Resolve Selected Text* to look up an address even if it wasn't detected automatically; opens a side panel with full DNS, ASN, geo, and cloud info
 - **Resolve All panel** — right-click → *IP Lens: Resolve All IPs in File* or use the Command Palette to open a side panel with a full table of every unique address in the file; click any row to jump to and select that address in the editor
 - **Private IP resolution** — RFC 1918 Class A/B/C, Loopback, Link-local, IPv6 ULA are classified locally; reverse PTR lookups use your system's DNS resolver so internal hostnames resolve automatically on your network
 - **Configurable providers** — choose your DNS-over-HTTPS resolver and IP info API independently; optionally override the DNS server used for private PTR lookups
@@ -26,6 +25,7 @@ IP Lens activates automatically on supported file types. No API keys required.
 |---|---|
 | Hover over an underlined address | Shows DNS, ASN, geo, cloud info |
 | Click status bar `🌐 N IPs` | Opens Resolve All panel |
+| Select text → right-click | *IP Lens: Resolve Selected Text* — look up any address, even undetected ones |
 | Right-click in editor | *IP Lens: Resolve All IPs in File* |
 | Click a row in Resolve All panel | Jumps to that address in the editor |
 | Command Palette | `IP Lens: Clear Resolution Cache` |
@@ -82,5 +82,5 @@ All lookups are made client-side from your machine. No data is sent to any serve
 ## Privacy
 
 - No telemetry is collected by this extension
-- Lookups are only triggered on hover or when running *Resolve All*
+- Lookups are only triggered on hover, *Resolve Selected Text*, or *Resolve All*
 - Results are cached in memory for the session duration (configurable TTL); nothing is written to disk

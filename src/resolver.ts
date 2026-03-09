@@ -16,6 +16,8 @@ export interface ResolvedInfo {
   isPrivate?: boolean;
   privateKind?: string;   // e.g. "Loopback" | "RFC 1918 — Class A" | "Link-local"
   resolvedVia?: string;   // data source label shown in hover
+  gatewayAddress?: string; // first host IP of the CIDR network (network address + 1)
+  gatewayPtr?: string;    // PTR record for the gateway address
   error?: string;
 }
 
@@ -119,6 +121,23 @@ function fetchJson(url: string, extraHeaders?: Record<string, string>): Promise<
     req.on('error', reject);
     req.setTimeout(5000, () => { req.destroy(); reject(new Error('timeout')); });
   });
+}
+
+/** Returns true if the IP is the network address for the given prefix (all host bits zero). */
+function isNetworkAddress(ip: string, prefixLen: number): boolean {
+  if (prefixLen >= 31) { return false; } // /31 and /32 have no conventional gateway
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4) { return false; }
+  const ipInt = ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+  const hostMask = (1 << (32 - prefixLen)) - 1;
+  return (ipInt & hostMask) === 0;
+}
+
+/** Returns the conventional gateway address: network address + 1 in the last octet. */
+function gatewayOf(ip: string): string {
+  const parts = ip.split('.').map(Number);
+  parts[3] += 1;
+  return parts.join('.');
 }
 
 function classifyPrivateIP(ip: string): string | undefined {
@@ -241,9 +260,12 @@ async function fetchForwardDNS(hostname: string): Promise<string | undefined> {
 }
 
 export async function resolve(address: string, kind: 'ipv4' | 'ipv6' | 'hostname'): Promise<ResolvedInfo> {
-  // Strip CIDR suffix for lookup
-  const target = address.includes('/') ? address.split('/')[0] : address;
-  const cacheKey = target;
+  // Strip CIDR suffix for lookup; keep full address as cache key so CIDR
+  // entries (which carry gateway info) are stored separately from bare IPs
+  const slashIdx = address.indexOf('/');
+  const target = slashIdx !== -1 ? address.slice(0, slashIdx) : address;
+  const prefixLen = slashIdx !== -1 ? parseInt(address.slice(slashIdx + 1)) : -1;
+  const cacheKey = address;
 
   const cached = getCached(cacheKey);
   if (cached) return cached;
@@ -255,12 +277,13 @@ export async function resolve(address: string, kind: 'ipv4' | 'ipv6' | 'hostname
     if (privateKind) {
       info.isPrivate = true;
       info.privateKind = privateKind;
+      // Always record which resolver was used, regardless of whether PTR is found
+      info.resolvedVia = localDnsResolverAddress
+        ? `local resolver (${localDnsResolverAddress})`
+        : 'system resolver';
       const ptr = await fetchPrivatePTR(target);
       if (ptr) {
         info.ptr = ptr;
-        info.resolvedVia = localDnsResolverAddress
-          ? `local resolver (${localDnsResolverAddress})`
-          : 'system resolver';
       }
     } else {
       const ipInfo = await fetchIPInfo(target);
@@ -270,6 +293,15 @@ export async function resolve(address: string, kind: 'ipv4' | 'ipv6' | 'hostname
       }
       info.cloudProvider = detectCloudProvider(info.org, info.isp);
       info.resolvedVia = `${activeIpInfo} · ${activeDoh}`;
+    }
+    // Gateway lookup for CIDR network addresses (e.g. 128.119.36.0/25 → gateway 128.119.36.1)
+    if (prefixLen !== -1 && isNetworkAddress(target, prefixLen) && !info.error) {
+      const gw = gatewayOf(target);
+      const gwPtr = info.isPrivate ? await fetchPrivatePTR(gw) : await fetchPTR(gw);
+      if (gwPtr) {
+        info.gatewayAddress = gw;
+        info.gatewayPtr = gwPtr;
+      }
     }
   } else {
     // hostname — check first for a trailing embedded IPv4 (e.g. "host-172.24.1.5")
