@@ -2,7 +2,7 @@
   "name": "ip-lens",
   "displayName": "IP Lens",
   "description": "Hover over any IP address or hostname for instant DNS lookups, WHOIS/ASN info, and geolocation — right in the editor",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "publisher": "factorynull",
   "license": "MIT",
   "repository": {
@@ -22,12 +22,21 @@
         "title": "IP Lens: Resolve All IPs in File"
       },
       {
+        "command": "ipLens.resolveSelection",
+        "title": "IP Lens: Resolve Selected Text"
+      },
+      {
         "command": "ipLens.clearCache",
         "title": "IP Lens: Clear Resolution Cache"
       }
     ],
     "menus": {
       "editor/context": [
+        {
+          "command": "ipLens.resolveSelection",
+          "when": "editorHasSelection",
+          "group": "navigation@98"
+        },
         {
           "command": "ipLens.resolveAll",
           "when": "editorIsOpen",
@@ -64,6 +73,11 @@
           ],
           "default": "dns.google",
           "description": "DNS-over-HTTPS provider used for PTR and forward A record lookups"
+        },
+        "ipLens.localDnsResolver": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "DNS server used for reverse PTR lookups of **private/RFC 1918 addresses** (e.g. `192.168.1.1` or `192.168.1.1:53`). Leave empty to use the system resolver. Set this to your internal DNS server to resolve hostnames on your local network."
         },
         "ipLens.ipInfoProvider": {
           "type": "string",
