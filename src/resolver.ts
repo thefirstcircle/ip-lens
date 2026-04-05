@@ -41,6 +41,8 @@ export function setLocalDnsResolver(address: string) {
   localDnsResolverAddress = address.trim();
 }
 
+const LOCAL_DNS_TIMEOUT_MS = 3000;
+
 /** PTR lookup for private IPs using the system resolver (or an optional override). */
 async function fetchPrivatePTR(ip: string): Promise<string | undefined> {
   if (ip.includes(':')) { return undefined; } // IPv6 PTR skipped
@@ -52,7 +54,10 @@ async function fetchPrivatePTR(ip: string): Promise<string | undefined> {
         ? localDnsResolverAddress
         : `${localDnsResolverAddress}:53`;
       resolver.setServers([server]);
-      const hostnames = await resolver.reverse(ip);
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => { resolver.cancel(); reject(new Error('timeout')); }, LOCAL_DNS_TIMEOUT_MS)
+      );
+      const hostnames = await Promise.race([resolver.reverse(ip), timeout]);
       return hostnames[0];
     }
     // Default: inherit the OS/system resolver — resolves internal names automatically

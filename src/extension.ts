@@ -205,7 +205,8 @@ function buildHoverContent(
       md.appendMarkdown(`| **${k}** | ${v} |\n`);
     }
   } else if (info.isPrivate) {
-    md.appendMarkdown('_No PTR record returned for this address._\n');
+    md.appendMarkdown('_No PTR record returned for this address._\n\n');
+    md.appendMarkdown('$(info) [Set a local DNS resolver](command:ipLens.setLocalDnsResolver) to resolve internal hostnames.\n');
   }
 
   if (info.resolvedVia) {
@@ -571,6 +572,21 @@ export function activate(context: vscode.ExtensionContext) {
       clearResolverCache();
       vscode.window.showInformationMessage('IP Lens: Cache cleared.');
       vscode.window.visibleTextEditors.forEach(decorateEditor);
+    }),
+
+    vscode.commands.registerCommand('ipLens.setLocalDnsResolver', async () => {
+      const current = cfg<string>('localDnsResolver') ?? '';
+      const input = await vscode.window.showInputBox({
+        title: 'IP Lens: Set Local DNS Resolver',
+        prompt: 'DNS server for reverse PTR lookups of private/RFC 1918 addresses. Leave empty to use the system resolver.',
+        value: current,
+        placeHolder: '192.168.1.1  or  192.168.1.1:53',
+      });
+      if (input === undefined) { return; } // user cancelled
+      await vscode.workspace.getConfiguration('ipLens').update('localDnsResolver', input.trim(), vscode.ConfigurationTarget.Global);
+      vscode.window.showInformationMessage(
+        input.trim() ? `IP Lens: Local DNS resolver set to ${input.trim()}` : 'IP Lens: Local DNS resolver cleared (using system resolver).'
+      );
     }),
 
     // Re-decorate when switching editors or editing text

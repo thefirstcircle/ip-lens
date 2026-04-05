@@ -28,6 +28,10 @@
       {
         "command": "ipLens.clearCache",
         "title": "IP Lens: Clear Resolution Cache"
+      },
+      {
+        "command": "ipLens.setLocalDnsResolver",
+        "title": "IP Lens: Set Local DNS Resolver"
       }
     ],
     "menus": {
