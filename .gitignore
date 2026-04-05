@@ -7,9 +7,6 @@ out/
 # Packaging
 *.vsix
 
-# Test/scratch files
-test-ips.txt
-
 # Claude session data
 .claude/
 

@@ -578,6 +578,10 @@ export function activate(context: vscode.ExtensionContext) {
       if (editor) { decorateEditor(editor); }
     }),
 
+    vscode.window.onDidChangeVisibleTextEditors((editors) => {
+      editors.forEach(decorateEditor);
+    }),
+
     vscode.workspace.onDidChangeTextDocument((e) => {
       const editor = vscode.window.visibleTextEditors.find(
         (ed) => ed.document === e.document
