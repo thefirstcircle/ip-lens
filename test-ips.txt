@@ -1,0 +1,408 @@
+# IP Lens — Comprehensive Edge Case Test File
+
+
+# ═══════════════════════════════════════════════════════════════
+# IPv4 — WELL-KNOWN PUBLIC
+# ═══════════════════════════════════════════════════════════════
+
+8.8.8.8           Google Public DNS (primary)
+8.8.4.4           Google Public DNS (secondary)
+1.1.1.1           Cloudflare DNS
+1.0.0.1           Cloudflare DNS (secondary)
+9.9.9.9           Quad9 DNS
+208.67.222.222    OpenDNS
+208.67.220.220    OpenDNS secondary
+4.2.2.2           Level3 legacy public DNS
+
+
+# ═══════════════════════════════════════════════════════════════
+# IPv4 — CLOUD PROVIDERS
+# ═══════════════════════════════════════════════════════════════
+
+# AWS
+13.32.0.1         AWS CloudFront edge
+52.94.76.1        Amazon S3 / AWS us-east-1
+54.239.28.85      AWS EC2 us-east-1
+3.5.140.1         AWS us-east-2
+
+# Azure
+20.112.52.29      Microsoft Azure eastus
+40.76.4.15        Azure Front Door
+13.91.222.61      Azure West US
+52.168.138.145    Azure CDN
+
+# GCP
+34.120.54.55      Google Cloud us-central1
+104.196.0.1       GCP Compute Engine
+8.34.208.1        Google Cloud EMEA
+35.186.192.1      GCP load balancer
+
+# Cloudflare / CDN
+104.16.0.1        Cloudflare CDN
+104.21.0.1        Cloudflare CDN range
+151.101.1.1       Fastly CDN
+151.101.65.121    Fastly (GitHub assets)
+23.32.0.1         Akamai CDN
+184.51.0.1.2.3
+
+        Akamai edge
+
+184.51.0.1.2.3
+
+1.5.6
+
+
+# ═══════════════════════════════════════════════════════════════
+# IPv4 — PRIVATE / RFC 1918 (no external lookup expected)
+# ═══════════════════════════════════════════════════════════════
+
+10.0.0.1          RFC 1918 Class A — gateway
+10.0.0.10         RFC 1918 Class A — host
+10.10.20.100      RFC 1918 Class A — internal
+10.255.255.254    RFC 1918 Class A — max
+172.16.0.1        RFC 1918 Class B — min
+172.20.10.1       RFC 1918 Class B — typical VPN range
+172.31.255.254    RFC 1918 Class B — max
+192.168.0.1       RFC 1918 Class C — home gateway
+192.168.1.1       RFC 1918 Class C — home router
+192.168.100.254   RFC 1918 Class C — internal
+127.0.0.1         Loopback
+127.0.0.2         Loopback range (also loopback)
+127.255.255.255   Loopback max
+169.254.1.1       Link-local (APIPA)
+169.254.169.254   AWS metadata endpoint (link-local)
+
+
+# ═══════════════════════════════════════════════════════════════
+# IPv4 — DOCUMENTATION / RESERVED (RFC 5737, RFC 3927, RFC 1122)
+# ═══════════════════════════════════════════════════════════════
+
+192.0.2.1         TEST-NET-1 (documentation)
+198.51.100.1      TEST-NET-2 (documentation)
+203.0.113.1       TEST-NET-3 (documentation)
+198.18.0.1        Benchmarking (RFC 2544)
+100.64.0.1        Shared address space (CGN, RFC 6598)
+240.0.0.1         Reserved (class E)
+255.255.255.255   Limited broadcast
+
+
+# ═══════════════════════════════════════════════════════════════
+# IPv4 — BOUNDARY / OCTET EDGE CASES
+# ═══════════════════════════════════════════════════════════════
+
+0.0.0.0           All-zeros (default route / unspecified)
+255.255.255.0     Common subnet mask (should still detect)
+1.0.0.0           Min routable (APNIC)
+223.255.255.255   Max class C
+224.0.0.1         Multicast all-hosts
+239.255.255.255   Multicast max
+
+
+# ═══════════════════════════════════════════════════════════════
+# IPv4 CIDR — VARIOUS PREFIX LENGTHS
+# ═══════════════════════════════════════════════════════════════
+
+10.0.0.0/8        RFC 1918 Class A supernet
+172.16.0.0/12     RFC 1918 Class B supernet
+192.168.0.0/16    RFC 1918 Class C supernet
+192.168.1.0/24    Common /24 LAN
+10.0.1.0/28       Small /28 subnet (16 hosts)
+203.0.113.0/24    TEST-NET-3 CIDR
+199.232.0.0/22    Fastly CIDR block
+13.32.0.0/15      AWS CloudFront CIDR
+35.191.0.0/16     GCP health check range
+1.1.1.0/24        Cloudflare CIDR
+8.8.8.0/24        Google DNS CIDR
+0.0.0.0/0         Default route
+104.16.0.0/12     Cloudflare CDN supernet
+192.0.2.0/24      TEST-NET-1 CIDR
+8.0.0.0/8         ARIN legacy /8
+
+
+# ═══════════════════════════════════════════════════════════════
+# IPv6 — FULL 8-GROUP (no ::)
+# ═══════════════════════════════════════════════════════════════
+
+2607:f8b0:4004:0c08:0000:0000:0000:200e    Google (full, uncompressed)
+2a03:2880:f380:0091:face:b00c:0000:25de    Facebook (full, uncompressed)
+2606:4700:0000:0000:0000:0000:6810:2b63    Cloudflare (full)
+2001:0db8:0000:0000:0000:0000:0000:0001    Documentation (full, RFC 3849)
+
+
+# ═══════════════════════════════════════════════════════════════
+# IPv6 — COMPRESSED (::)
+# ═══════════════════════════════════════════════════════════════
+
+# Leading ::
+::1                                         Loopback
+::ffff:192.0.2.1                            IPv4-mapped (note: may not resolve)
+::                                          All-zeros (unspecified)
+
+# Trailing ::
+2001:db8::                                  Documentation prefix, trailing ::
+fe80::                                      Link-local base
+2600:1f18:4a1:6d00::                        AWS us-east-1, trailing ::
+
+# :: in middle — various positions
+2001:4860:4860::8888                        Google DNS IPv6
+2606:4700:4700::1111                        Cloudflare DNS IPv6
+2606:4700:4700::1001                        Cloudflare DNS IPv6 secondary
+fe80::1                                     Link-local
+fe80::dead:beef                             Link-local with arbitrary suffix
+2400:cb00::1                                Cloudflare network
+2001:db8::1                                 Documentation
+2001:db8::dead:beef                         Documentation
+2001:db8::1:2:3:4                           Documentation mixed
+fd00::1                                     IPv6 ULA (private)
+fc00::1                                     IPv6 ULA (private)
+
+# More complex compressed forms
+2607:f8b0:4004:c08::200e                    Google mail server
+2a03:2880:f380:91:face:b00c:0:25de         Facebook (7-group explicit, ::1 implied... actually 8 groups)
+2620:149:a41:132::2:1                       Microsoft
+2620:1ec:46::36                             Microsoft
+2620:1ec:33:1::11                           Microsoft Teams
+2600:1901:1:510::                           GCP (trailing ::)
+2606:4700::6811:afe6                        Cloudflare
+2a04:4e42:61::347                           Fastly
+2600:1401:d000:18d::2a1                     Akamai
+2604:a880:400:d0::1                         DigitalOcean
+2400:6180:0:d0::1                           DigitalOcean Singapore
+2001:41d0:1:1b00::1                         OVH
+2a01:4f8:c010:d56::1                        Hetzner
+
+
+# ═══════════════════════════════════════════════════════════════
+# IPv6 CIDR
+# ═══════════════════════════════════════════════════════════════
+
+2001:db8::/32                               Documentation prefix
+2606:4700::/32                              Cloudflare
+2607:f8b0::/32                              Google
+fe80::/10                                   Link-local range
+fc00::/7                                    ULA range
+::/0                                        Default IPv6 route
+::1/128                                     Loopback /128
+2001:db8::1/64                              Documentation /64
+
+
+# ═══════════════════════════════════════════════════════════════
+# HOSTNAMES / DOMAINS
+# ═══════════════════════════════════════════════════════════════
+
+# Common public services
+google.com
+cloudflare.com
+github.com
+microsoft.com
+amazon.com
+apple.com
+
+# Subdomains
+api.github.com
+mail.google.com
+s3.amazonaws.com
+ec2.us-east-1.amazonaws.com
+storage.googleapis.com
+blob.core.windows.net
+cdn.cloudflare.net
+ns1.cloudflare.com
+
+# Internal / corp style
+internal.corp.local
+db01.prod.example.com
+vpn.company.internal
+ldap.dc1.corp.example.com
+server-01.us-east-1.internal
+
+# Longer TLDs
+example.io
+api.example.co.uk
+service.example.com.br
+
+
+# ═══════════════════════════════════════════════════════════════
+# EDGE CASES — SHOULD MATCH (IP inside various contexts)
+# ═══════════════════════════════════════════════════════════════
+
+# IP inside a URL (should detect the IP, not the whole URL)
+proxy_pass http://10.0.1.10:8080;
+proxy_pass https://192.168.5.20:443/api;
+proxy_pass http://172.16.10.5/path/to/resource;
+upstream backend http://10.10.10.10;
+curl https://8.8.8.8/resolve?name=example.com
+
+# Quoted
+bind_address = "10.0.0.50"
+server_ip = '192.168.1.100'
+host: "203.0.113.42"
+"ip": "52.94.76.1"
+
+# After equals / colon (config file style)
+SERVER_IP=10.0.0.5
+DATABASE_HOST=172.16.5.50
+REDIS_HOST=10.10.0.20
+nameserver 1.1.1.1
+nameserver 8.8.8.8
+
+# Comma-separated lists
+allow 10.0.0.1, 10.0.0.2, 10.0.0.3;
+trusted_ips=192.168.1.10,192.168.1.11,192.168.1.12
+
+# After arrow / pipe
+connection: 10.0.0.1 -> 8.8.8.8
+route via 172.16.0.1 | fallback 10.0.0.1
+
+# In brackets (netstat-style port notation)
+2606:4700::6811:afe6[443]
+2a04:4e42:61::347[80]
+192.168.1.186[56115]
+
+# YAML / JSON style
+  host: 10.0.0.1
+  ip_address: 192.168.1.50
+  - 10.0.0.5
+  - 10.0.0.6
+{"src": "10.0.1.5", "dst": "8.8.8.8", "port": 443}
+{"nameserver": "1.1.1.1"}
+
+# INI style
+[server]
+ip=192.168.10.1
+gateway=192.168.10.254
+dns1=8.8.8.8
+dns2=8.8.4.4
+
+# SSH config
+Host bastion
+  HostName 34.120.54.55
+  ProxyJump 10.0.0.1
+
+# iptables / firewall rules
+-A INPUT -s 192.168.1.0/24 -j ACCEPT
+-A INPUT -s 185.220.101.0/24 -j DROP
+-A FORWARD -d 10.0.0.0/8 -j ACCEPT
+
+# Nginx upstream block
+upstream app_servers {
+    server 10.0.1.10:3000;
+    server 10.0.1.11:3000;
+    server 10.0.1.12:3000 backup;
+}
+
+
+# ═══════════════════════════════════════════════════════════════
+# REALISTIC LOG LINES
+# ═══════════════════════════════════════════════════════════════
+
+# Apache / nginx access log
+203.0.113.42 - - [15/Jan/2024:10:23:44 +0000] "GET /index.html HTTP/1.1" 200 1234 "-" "Mozilla/5.0"
+185.220.101.34 - - [15/Jan/2024:10:23:45 +0000] "POST /api/login HTTP/1.1" 401 88
+10.0.1.5 - - [15/Jan/2024:10:23:46 +0000] "GET /health HTTP/1.1" 200 2
+
+# Application log (structured)
+2024-01-15T10:23:44Z INFO  connection from 203.0.113.42:54321 to 10.0.1.5:443
+2024-01-15T10:23:45Z WARN  rate limit hit for 185.220.101.1 (Tor exit suspected)
+2024-01-15T10:23:46Z INFO  upstream proxy 172.16.5.20 responded in 42ms
+2024-01-15T10:23:47Z ERROR timeout connecting to 8.8.8.8:53 after 5000ms
+2024-01-15T10:23:48Z INFO  cdn edge 104.16.132.229 served 200 OK
+2024-01-15T10:23:49Z DEBUG health-check: 10.0.0.1 (gw), 10.0.0.10 (db), 10.0.0.20 (cache)
+2024-01-15T10:23:50Z INFO  resolved api.github.com to 140.82.114.6
+2024-01-15T10:23:51Z INFO  IPv6 client 2607:f8b0:4004:c08::200e connected on port 443
+2024-01-15T10:23:52Z WARN  blocked 2a0c:5a80::1 (known scanner)
+
+# syslog style
+Jan 15 10:23:44 fw01 kernel: [UFW BLOCK] IN=eth0 SRC=185.220.101.34 DST=10.0.0.1 LEN=40 PROTO=TCP SPT=45678 DPT=22
+Jan 15 10:23:45 fw01 kernel: [UFW ALLOW] IN=eth0 SRC=192.168.1.100 DST=192.168.1.1 PROTO=TCP DPT=80
+Jan 15 10:23:46 fw01 sshd[1234]: Accepted publickey for admin from 192.168.1.50 port 51234
+
+# netstat / ss output (IPv4)
+tcp   ESTABLISHED  192.168.1.186:56115    18.97.36.52:443
+tcp   ESTABLISHED  192.168.1.120:51368    17.248.254.69:443
+tcp   ESTABLISHED  192.168.1.194:4500     141.207.251.233:4500
+
+# netstat / ss output (IPv6 — port in brackets)
+tcp   ESTABLISHED  2601:186:837f:ed3d:859e:74de::    2606:4700::6811:afe6[443]
+tcp   ESTABLISHED  2601:186:837f:ed3d:60a6:5220::    2620:149:a41:132::2:1[443]
+udp   MULTIPLE     2601:186:837f:ed3d:60a6:5220::    2a04:4e42:61::774[443]
+tcp   ESTABLISHED  2601:186:837f:ed3d:1d90:ca2:3::1  2a03:2880:f380:91:face:b00c:0:25de[443]
+
+# DNS query log (bind/unbound style)
+15-Jan-2024 10:23:44.123 queries: info: client @0x7f 192.168.1.50#54321 (google.com): query: google.com IN A + (10.0.0.53)
+15-Jan-2024 10:23:44.456 queries: info: client @0x7f 2601:186:837f::1#60234 (github.com): query: github.com IN AAAA + (::1)
+
+
+# ═══════════════════════════════════════════════════════════════
+# EDGE CASES — SHOULD NOT MATCH (false positive guards)
+# ═══════════════════════════════════════════════════════════════
+
+# Version numbers (should NOT be underlined as IPs)
+version 1.2.3.4.5          (5 octets — too many)
+app v2.10.4                (only 3 parts)
+kernel 5.15.0-76-generic   (not 4 octets in IP format)
+
+# Dates that look like IPs
+2024.01.15                 (date format, 3 parts)
+15.01.2024                 (European date)
+
+# File paths with IP-like segments — these may or may not match depending on context
+# /var/log/192.168.1.1.log   (path — the / lookbehind should block if preceding char is /)
+
+# Hex that might be confused with IPv6 but isn't an address
+deadbeef                   (no colons — just a word)
+CAFEBABE                   (same)
+
+# Port numbers alone (should NOT match)
+:8080
+:443
+:22
+
+# Numbers with too many octets or out-of-range values (should NOT match as IPv4)
+256.1.1.1                  (octet > 255)
+999.999.999.999            (all out of range)
+1.2.3.4.5                  (5 octets)
+
+# Domain-like but single label (should NOT match)
+localhost
+hostname
+example
+
+
+# ═══════════════════════════════════════════════════════════════
+# MIXED DENSITY — STRESS TEST FOR STATUS BAR COUNT
+# ═══════════════════════════════════════════════════════════════
+
+# Multiple IPs on one line
+10.0.0.1 10.0.0.2 10.0.0.3 10.0.0.4 10.0.0.5 10.0.0.6 10.0.0.7 10.0.0.8
+
+# Mixed IPv4 and IPv6 on one line
+src=192.168.1.5 dst=2606:4700::6810:2b63 via=10.0.0.1
+
+# IP range notation (both should match independently)
+10.0.0.1 - 10.0.0.254
+
+# BGP peer config
+neighbor 10.0.0.1 remote-as 65001
+neighbor 10.0.0.2 remote-as 65002
+network 192.168.0.0 mask 255.255.0.0
+network 10.0.0.0 mask 255.0.0.0
+
+# Cloud init / user-data style
+runcmd:
+  - curl -s http://169.254.169.254/latest/meta-data/
+  - echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+  - echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+
+# Ansible inventory style
+[webservers]
+web01 ansible_host=10.0.1.10
+web02 ansible_host=10.0.1.11
+web03 ansible_host=10.0.1.12
+
+[databases]
+db01 ansible_host=10.0.2.10
+db02 ansible_host=10.0.2.11
+
+[all:vars]
+ntp_server=216.239.35.0
+smtp_relay=74.125.0.1
