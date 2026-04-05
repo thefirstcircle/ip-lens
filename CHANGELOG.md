@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- `IP Lens: Set Local DNS Resolver` command added to the Command Palette — allows setting or clearing the local DNS resolver without opening Settings
+- Default activated file types expanded to include `xml`, `dockerfile`, `toml`, `terraform`, `nginx`, `apacheconf`, and `hosts`
+
+### Fixed
+- Hostname detection now requires an alphabetic TLD (e.g. `.com`, `.net`), reducing false positives on numeric-looking strings such as version numbers
+- Hostname detection now rejects labels containing a camelCase transition (e.g. `ipLens.resolveAll`, `my.clearCache`), eliminating false positives on code identifiers while preserving all-caps hostnames like `HOST.CORP`
+- Editors that become visible after a tab split or tab move are now decorated immediately
+
 ## [0.3.0] - 2026-03-09
 
 ### Added

@@ -4,13 +4,15 @@
 
 Hover over any IP address or hostname for instant DNS lookups, WHOIS/ASN info, and geolocation — without leaving your editor. Detects IPv4, IPv6, CIDR blocks, and hostnames in any text file and enriches them with live data from configurable DNS and IP info providers.
 
+**Built for:** sysadmins triaging logs, security analysts reviewing nmap or firewall output, DevOps engineers reading infra configs, and anyone who ends up Googling IP addresses while working in their editor.
+
 ## Features
 
 - **Dotted underlines** on every detected IP address and hostname
   - Blue = IPv4 · Green = IPv6 · Orange = hostname
-- **Hover card** — PTR/reverse DNS, ASN, organisation, ISP, country, city, and cloud provider badge
+- **Hover card** — PTR/reverse DNS, ASN, organisation, ISP, country, city, cloud provider badge, and gateway address for CIDR network addresses
 - **Gutter icon** on every line that contains an address
-- **Status bar counter** — `🌐 N IPs` in the bottom-right; click to open the Resolve All panel
+- **Status bar counter** — `🌐 N IPs` in the bottom-right; click to open the Resolve All panel; shows `N of M IPs` when a file exceeds 10,000 addresses
 - **Resolve Selected Text** — select any text, right-click → *IP Lens: Resolve Selected Text* to look up an address even if it wasn't detected automatically; opens a side panel with full DNS, ASN, geo, and cloud info
 - **Resolve All panel** — right-click → *IP Lens: Resolve All IPs in File* or use the Command Palette to open a side panel with a full table of every unique address in the file; click any row to jump to and select that address in the editor
 - **Private IP resolution** — RFC 1918 Class A/B/C, Loopback, Link-local, IPv6 ULA are classified locally; reverse PTR lookups use your system's DNS resolver so internal hostnames resolve automatically on your network
@@ -28,11 +30,11 @@ IP Lens activates automatically on supported file types. No API keys required.
 | Select text → right-click | *IP Lens: Resolve Selected Text* — look up any address, even undetected ones |
 | Right-click in editor | *IP Lens: Resolve All IPs in File* |
 | Click a row in Resolve All panel | Jumps to that address in the editor |
-| Command Palette | `IP Lens: Clear Resolution Cache` |
+| Command Palette | `IP Lens: Clear Resolution Cache`, `IP Lens: Set Local DNS Resolver` |
 
 ## Supported File Types
 
-Activates on: `plaintext`, `log`, `ini`, `csv`, `yaml`, `json`, `markdown`, `shellscript`, `properties`
+Activates on: `plaintext`, `log`, `ini`, `csv`, `yaml`, `json`, `markdown`, `shellscript`, `properties`, `xml`, `dockerfile`, `toml`, `terraform`, `nginx`, `apacheconf`, `hosts`
 
 Add more via the `ipLens.activateOnLanguages` setting, or use `"*"` to activate everywhere.
 

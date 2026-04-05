@@ -26,10 +26,15 @@ const CIDR4 = `${IPV4}(?:/(?:3[0-2]|[12]\\d|\\d))?`;
 const CIDR6 = `(?:${IPV6})(?:/(?:12[0-8]|1[01]\\d|[1-9]\\d|\\d))?`;
 
 // Hostname/domain (not bare single labels to avoid false positives)
-// Must have at least one dot and a valid alphabetic TLD ending
+// Must have at least one dot and a valid alphabetic TLD ending.
+// The NO_CAMEL lookahead rejects matches where any label contains a
+// lowercase→uppercase transition (camelCase), which identifies code
+// identifiers like `ipLens.resolveAll` while preserving all-caps
+// hostnames like `HOST.CORP` and PascalCase-first labels like `Api.example.com`.
 const LABEL = '[a-zA-Z0-9](?:[a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])?';
 const TLD = '[a-zA-Z]{2,63}';
-export const HOSTNAME = `${LABEL}(?:\\.${LABEL})*\\.${TLD}`;
+const NO_CAMEL = '(?!(?:[a-zA-Z0-9-]*\\.)*[a-zA-Z0-9-]*[a-z][A-Z])';
+export const HOSTNAME = `${NO_CAMEL}${LABEL}(?:\\.${LABEL})*\\.${TLD}`;
 
 // Combined pattern: CIDR4 first (more specific), then IPv6, then hostname
 export const COMBINED_PATTERN = new RegExp(

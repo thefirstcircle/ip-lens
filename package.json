@@ -11,8 +11,8 @@
   },
   "engines": { "vscode": "^1.85.0" },
   "icon": "images/icon.png",
-  "categories": ["Other", "Visualization"],
-  "keywords": ["ip", "dns", "whois", "network", "geolocation", "cidr", "ipv4", "ipv6", "hostname", "asn", "networking", "log"],
+  "categories": ["Other", "Visualization", "Linters"],
+  "keywords": ["ip", "dns", "whois", "network", "geolocation", "cidr", "ipv4", "ipv6", "hostname", "asn", "networking", "log", "resolver", "nmap", "sysadmin", "devops", "infosec", "security", "lookup", "ptr", "reverse-dns"],
   "activationEvents": ["onStartupFinished"],
   "main": "./out/extension.js",
   "contributes": {
@@ -59,7 +59,7 @@
         "ipLens.activateOnLanguages": {
           "type": "array",
           "items": { "type": "string" },
-          "default": ["plaintext", "log", "ini", "csv", "yaml", "json", "markdown", "shellscript", "properties"],
+          "default": ["plaintext", "log", "ini", "csv", "yaml", "json", "markdown", "shellscript", "properties", "xml", "dockerfile", "toml", "terraform", "nginx", "apacheconf", "hosts"],
           "description": "Language IDs where IP Lens activates"
         },
         "ipLens.cacheTTLSeconds": {
