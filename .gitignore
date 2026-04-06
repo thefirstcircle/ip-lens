@@ -6,6 +6,7 @@ out/
 
 # Packaging
 *.vsix
+*.vsix.sha256
 
 # Claude session data
 .claude/
