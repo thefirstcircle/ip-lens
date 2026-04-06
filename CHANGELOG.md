@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.0] - 2026-04-05
 
 ### Added
 - `IP Lens: Set Local DNS Resolver` command added to the Command Palette — allows setting or clearing the local DNS resolver without opening Settings
